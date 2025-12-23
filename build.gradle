@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+    id 'jacoco'
+}
+
+sourceCompatibility = '21'
+targetCompatibility = '21'
+
+allprojects {
+    apply plugin: 'jacoco'
+    group = "com.guardrail"
+    version = "1.0.0-SNAPSHOT"
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'maven-publish'
+}
+
+tasks.register("codeCoverageReport", JacocoReport) {
+    subprojects { subproject ->
+        subproject.plugins.withType(JacocoPlugin).configureEach {
+            subproject.tasks.matching({ t -> t.extensions.findByType(JacocoTaskExtension) }).configureEach { testTask ->
+                sourceSets subproject.sourceSets.main
+                executionData(testTask)
+            }
+
+            subproject.tasks.matching({ t -> t.extensions.findByType(JacocoTaskExtension) }).forEach {
+                rootProject.tasks.codeCoverageReport.dependsOn(it)
+            }
+        }
+    }
+
+    reports {
+        xml.required = true
+        xml.outputLocation = file("build/reports/jacoco/test/jacocoTestReport.xml")
+        html.required = true
+    }
+}

@@ -1,0 +1,108 @@
+# Exemplo de configuração do Guardrail Logger
+# Copie este arquivo para seu projeto e renomeie para application.yml
+
+guardrail:
+  logger:
+    # Habilita ou desabilita o mascaramento de dados sensíveis
+    enabled: true
+    
+    # Caractere utilizado para mascaramento
+    mask-char: '*'
+    
+    # Máscara padrão quando não há formatador específico
+    default-mask: '***'
+    
+    # Habilita detecção automática de tipos de dados sensíveis
+    auto-detect: true
+    
+    # Tipos de dados para detecção automática
+    auto-detect-types:
+      - CPF
+      - CNPJ
+      - EMAIL
+      - CREDIT_CARD
+      - IP_ADDRESS
+    
+    # Lista de campos sensíveis configurados
+    sensitive-fields:
+      # CPF
+      - name: documento
+        data-type: CPF
+      - name: cpf
+        data-type: CPF
+      
+      # CNPJ
+      - name: cnpj
+        data-type: CNPJ
+      
+      # Email
+      - name: email
+        data-type: EMAIL
+      - name: emailAddress
+        data-type: EMAIL
+      
+      # Telefone
+      - name: telefone
+        data-type: PHONE
+      - name: phone
+        data-type: PHONE
+      - name: celular
+        data-type: PHONE
+      
+      # Nome
+      - name: nome
+        data-type: NAME
+      - name: name
+        data-type: NAME
+      - name: nomeCompleto
+        data-type: NAME
+      
+      # Valores monetários
+      - name: renda
+        data-type: MONETARY
+      - name: salario
+        data-type: MONETARY
+      - name: valor
+        data-type: MONETARY
+      
+      # Senhas e tokens
+      - name: senha
+        data-type: PASSWORD
+      - name: password
+        data-type: PASSWORD
+      - name: token
+        data-type: PASSWORD
+      
+      # Cartão de crédito
+      - name: cartao
+        data-type: CREDIT_CARD
+      - name: creditCard
+        data-type: CREDIT_CARD
+      - name: numeroCartao
+        data-type: CREDIT_CARD
+      
+      # Conta bancária
+      - name: conta
+        data-type: BANK_ACCOUNT
+      - name: agencia
+        data-type: BANK_AGENCY
+      
+      # Campo com ofuscação parcial customizada
+      - name: customField
+        data-type: GENERIC
+        visible-chars-start: 2
+        visible-chars-end: 2
+        case-sensitive: false
+    
+    # Pacotes a serem excluídos da ofuscação
+    exclude-packages:
+      - org.springframework
+      - com.fasterxml.jackson
+    
+    # Configurações GELF/Graylog (opcional)
+    gelf:
+      enabled: false
+      host: localhost
+      port: 12201
+      protocol: UDP
+      include-full-mdc: true

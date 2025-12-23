@@ -1,0 +1,61 @@
+def publishArtifact = ext.getProperty('publishArtifact')
+
+println "==================================="
+println "Artifact Version: " + version
+println "Artifact Name: " + publishArtifact
+println "Artifact Group: " + group
+println "==================================="
+
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': publishArtifact,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
+publishing {
+    repositories {
+        // Maven Local para desenvolvimento
+        mavenLocal()
+        
+        // Repositório customizado (configurar via variáveis de ambiente)
+        if (System.getenv('MAVEN_REPO_URL')) {
+            maven {
+                name = 'custom'
+                url = System.getenv('MAVEN_REPO_URL')
+                credentials {
+                    username System.getenv('MAVEN_REPO_USER') ?: ''
+                    password System.getenv('MAVEN_REPO_PASSWORD') ?: ''
+                }
+            }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = publishArtifact
+            
+            pom {
+                name = 'Guardrail Logger'
+                description = 'Biblioteca para proteção de dados sensíveis em logs, em conformidade com LGPD'
+                url = 'https://github.com/rmaneschy/guardrail-logger'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'guardrail'
+                        name = 'Guardrail Team'
+                    }
+                }
+            }
+        }
+    }
+}

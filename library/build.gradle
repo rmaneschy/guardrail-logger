@@ -1,0 +1,63 @@
+plugins {
+    id 'java-library'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+ext {
+    publishArtifact = 'guardrail-logger'
+    springBootVersion = '3.2.0'
+    logbackVersion = '1.4.14'
+    slf4jVersion = '2.0.9'
+    jacksonVersion = '2.16.0'
+}
+
+apply from: '../publish.gradle'
+
+dependencies {
+    // Spring Boot (provided - consumer will have it)
+    compileOnly "org.springframework.boot:spring-boot-starter:${springBootVersion}"
+    compileOnly "org.springframework.boot:spring-boot-autoconfigure:${springBootVersion}"
+    
+    // Logback
+    api "ch.qos.logback:logback-classic:${logbackVersion}"
+    api "ch.qos.logback:logback-core:${logbackVersion}"
+    
+    // SLF4J
+    api "org.slf4j:slf4j-api:${slf4jVersion}"
+    
+    // Jackson for JSON processing
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    
+    // GELF support (optional - for Graylog integration)
+    compileOnly 'de.siegmar:logback-gelf:6.1.0'
+    compileOnly 'biz.paluch.logging:logstash-gelf:1.15.1'
+    
+    // Annotation processor for configuration metadata
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
+    
+    // Test dependencies
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.1"
+    testImplementation 'org.mockito:mockito-core:5.8.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.8.0'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+    testImplementation 'de.siegmar:logback-gelf:6.1.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': 'Guardrail Logger',
+            'Implementation-Version': project.version,
+            'Automatic-Module-Name': 'com.guardrail.logger'
+        )
+    }
+}

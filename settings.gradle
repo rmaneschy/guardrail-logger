@@ -1,0 +1,2 @@
+rootProject.name = 'guardrail-logger'
+include 'library'
