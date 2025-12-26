@@ -52,13 +52,13 @@ public class CpfFormatter implements Formatter {
         }
 
         // Remove formatação existente
-        String cleanValue = value.replaceAll("[^0-9]", "");
+        final var cleanValue = value.replaceAll("[^0-9]", "");
 
         if (cleanValue.length() != 11) {
             return String.valueOf(maskChar).repeat(3);
         }
 
-        StringBuilder result = new StringBuilder();
+        final var result = new StringBuilder();
 
         if (formatted) {
             // Formato: XXX.XXX.XXX-XX
@@ -94,7 +94,7 @@ public class CpfFormatter implements Formatter {
         if (value == null || value.isBlank()) {
             return false;
         }
-        String cleanValue = value.replaceAll("[^0-9]", "");
+        final var cleanValue = value.replaceAll("[^0-9]", "");
         return cleanValue.length() == 11;
     }
 }

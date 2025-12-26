@@ -47,10 +47,10 @@ public class EmailFormatter implements Formatter {
         }
 
         int atIndex = value.indexOf('@');
-        String user = value.substring(0, atIndex);
-        String domain = value.substring(atIndex + 1);
+        final var user = value.substring(0, atIndex);
+        final var domain = value.substring(atIndex + 1);
 
-        StringBuilder result = new StringBuilder();
+        final var result = new StringBuilder();
 
         // Mascara o usuário
         if (user.length() <= visibleCharsUser) {
@@ -65,8 +65,8 @@ public class EmailFormatter implements Formatter {
         // Mascara o domínio, preservando a extensão
         int lastDotIndex = domain.lastIndexOf('.');
         if (lastDotIndex > 0) {
-            String domainName = domain.substring(0, lastDotIndex);
-            String extension = domain.substring(lastDotIndex);
+            final var domainName = domain.substring(0, lastDotIndex);
+            final var extension = domain.substring(lastDotIndex);
 
             if (domainName.length() <= visibleCharsDomain) {
                 result.append(String.valueOf(maskChar).repeat(domainName.length()));

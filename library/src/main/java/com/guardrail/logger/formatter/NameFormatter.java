@@ -46,15 +46,15 @@ public class NameFormatter implements Formatter {
             return String.valueOf(maskChar).repeat(3);
         }
 
-        String[] words = value.trim().split("\\s+");
-        StringBuilder result = new StringBuilder();
+        final var words = value.trim().split("\\s+");
+        final var result = new StringBuilder();
 
         for (int i = 0; i < words.length; i++) {
             if (i > 0) {
                 result.append(" ");
             }
 
-            String word = words[i];
+            final var word = words[i];
             if (word.isEmpty()) {
                 continue;
             }

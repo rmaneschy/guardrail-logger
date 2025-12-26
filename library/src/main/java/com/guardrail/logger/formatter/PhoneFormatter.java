@@ -47,17 +47,17 @@ public class PhoneFormatter implements Formatter {
         }
 
         // Remove formatação existente
-        String cleanValue = value.replaceAll("[^0-9]", "");
+        final var cleanValue = value.replaceAll("[^0-9]", "");
 
         if (cleanValue.length() < 10 || cleanValue.length() > 11) {
             return String.valueOf(maskChar).repeat(3);
         }
 
-        StringBuilder result = new StringBuilder();
+        final var result = new StringBuilder();
 
         if (showDdd) {
             result.append("(").append(cleanValue, 0, 2).append(") ");
-            String number = cleanValue.substring(2);
+            final var number = cleanValue.substring(2);
             int maskLength = number.length() - visibleDigitsEnd;
             result.append(String.valueOf(maskChar).repeat(Math.max(0, maskLength)));
             if (visibleDigitsEnd > 0 && number.length() > maskLength) {
@@ -66,7 +66,7 @@ public class PhoneFormatter implements Formatter {
             }
         } else {
             result.append("(**) ");
-            String number = cleanValue.substring(2);
+            final var number = cleanValue.substring(2);
             int maskLength = number.length() - visibleDigitsEnd;
             result.append(String.valueOf(maskChar).repeat(Math.max(0, maskLength)));
             if (visibleDigitsEnd > 0 && number.length() > maskLength) {
@@ -93,7 +93,7 @@ public class PhoneFormatter implements Formatter {
         if (value == null || value.isBlank()) {
             return false;
         }
-        String cleanValue = value.replaceAll("[^0-9]", "");
+        final var cleanValue = value.replaceAll("[^0-9]", "");
         return cleanValue.length() >= 10 && cleanValue.length() <= 11;
     }
 }

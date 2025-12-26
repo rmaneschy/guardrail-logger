@@ -60,7 +60,7 @@ public class CreditCardFormatter implements Formatter {
 
         if (formatted && cleanValue.length() == 16) {
             // Formato: ****-****-****-1111
-            StringBuilder result = new StringBuilder();
+            final var result = new StringBuilder();
             result.append(maskChar).append(maskChar).append(maskChar).append(maskChar);
             result.append("-");
             result.append(maskChar).append(maskChar).append(maskChar).append(maskChar);
@@ -89,7 +89,7 @@ public class CreditCardFormatter implements Formatter {
         if (value == null || value.isBlank()) {
             return false;
         }
-        String cleanValue = value.replaceAll("[^0-9]", "");
+        final var cleanValue = value.replaceAll("[^0-9]", "");
         return cleanValue.length() >= 13 && cleanValue.length() <= 19;
     }
 }

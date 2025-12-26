@@ -47,8 +47,8 @@ public class MonetaryFormatter implements Formatter {
         }
 
         // Normaliza separadores decimais
-        String normalizedValue = value.replace(",", ".");
-        
+        final var normalizedValue = value.replace(",", ".");
+
         String integerPart;
         String decimalPart = "";
         
@@ -61,9 +61,9 @@ public class MonetaryFormatter implements Formatter {
         }
 
         // Remove caracteres não numéricos da parte inteira
-        String cleanInteger = integerPart.replaceAll("[^0-9]", "");
-        
-        StringBuilder result = new StringBuilder();
+        final var cleanInteger = integerPart.replaceAll("[^0-9]", "");
+
+        final var result = new StringBuilder();
 
         if (showMagnitude && !cleanInteger.isEmpty()) {
             result.append(cleanInteger.charAt(0));
@@ -99,7 +99,7 @@ public class MonetaryFormatter implements Formatter {
         if (value == null || value.isBlank()) {
             return false;
         }
-        String cleanValue = value.replaceAll("[^0-9.,]", "");
+        final var cleanValue = value.replaceAll("[^0-9.,]", "");
         return !cleanValue.isEmpty();
     }
 }

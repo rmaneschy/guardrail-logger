@@ -45,13 +45,13 @@ public class CnpjFormatter implements Formatter {
         }
 
         // Remove formatação existente
-        String cleanValue = value.replaceAll("[^0-9]", "");
+        final var cleanValue = value.replaceAll("[^A-Za-z0-9]", "");
 
         if (cleanValue.length() != 14) {
             return String.valueOf(maskChar).repeat(3);
         }
 
-        StringBuilder result = new StringBuilder();
+        final var result = new StringBuilder();
 
         if (formatted) {
             // Formato: XX.XXX.XXX/XXXX-XX
@@ -90,7 +90,7 @@ public class CnpjFormatter implements Formatter {
         if (value == null || value.isBlank()) {
             return false;
         }
-        String cleanValue = value.replaceAll("[^0-9]", "");
+        final var cleanValue = value.replaceAll("[^A-Za-z0-9]", "");
         return cleanValue.length() == 14;
     }
 }
