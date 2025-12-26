@@ -2,6 +2,15 @@ package com.guardrail.logger.formatter;
 
 import com.guardrail.logger.core.Formatter;
 
+/**
+ * Formatador generico para documentos (CPF ou CNPJ).
+ * 
+ * <p>Este formatador detecta automaticamente se o valor informado possui 11 digitos (CPF)
+ * ou 14 digitos (CNPJ) e aplica o mascaramento apropriado.</p>
+ * 
+ * @author Guardrail Logger Team
+ * @since 1.0.0
+ */
 public class DocumentFormatter implements Formatter {
     @Override
     public String format(final String value) {

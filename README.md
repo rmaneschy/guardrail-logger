@@ -12,6 +12,60 @@ A biblioteca oferece mascaramento automático de dados sensíveis através de um
 
 O sistema é extensível, permitindo a criação de formatadores e ofuscadores customizados além dos previamente implementados. A configuração pode ser feita via properties ou programaticamente, oferecendo flexibilidade para diferentes cenários de uso.
 
+## Arquitetura e Fluxos
+
+### Diagrama C4 (Nível de Componente)
+
+```mermaid
+C4Component
+    title Diagrama de Componentes - Guardrail Logger
+
+    Container_Boundary(spring_app, "Aplicação Spring Boot") {
+        Component(app_code, "Código da Aplicação", "Java/Spring", "Gera mensagens de log")
+        
+        Boundary(guardrail_lib, "Guardrail Logger Library") {
+            Component(auto_config, "AutoConfiguration", "Spring", "Detecta configurações e inicializa a lib")
+            Component(listener, "ApplicationListener", "Spring", "Configura appenders no ApplicationReadyEvent")
+            Component(engine, "SanitizationEngine", "Java", "Engine central de mascaramento")
+            Component(registry, "Registry", "Java", "Armazena formatadores e ofuscadores")
+            Component(encoder, "GuardrailMaskingEncoder", "Logback", "Intercepta e sanitiza eventos de log")
+        }
+
+        Component(logback, "Logback Framework", "Logback", "Gerencia o fluxo de logs")
+    }
+
+    Rel(app_code, logback, "Envia logs para")
+    Rel(auto_config, listener, "Configura")
+    Rel(listener, engine, "Inicializa")
+    Rel(listener, logback, "Injeta GuardrailMaskingEncoder nos Appenders")
+    Rel(logback, encoder, "Chama encode()")
+    Rel(encoder, engine, "Solicita sanitização")
+    Rel(engine, registry, "Busca formatadores/ofuscadores")
+```
+
+### Fluxo de Inicialização
+
+O processo de inicialização do Guardrail Logger ocorre automaticamente em aplicações Spring Boot:
+
+1.  **Detecção de Propriedades**: A classe `GuardrailLoggerAutoConfiguration` é carregada e lê as propriedades do `application.yml` (prefixo `guardrail.logger`).
+2.  **Captura do Ambiente**: Campos sensíveis adicionais definidos via variáveis de ambiente ou System Properties são mesclados às configurações.
+3.  **Evento de Prontidão**: Quando o Spring dispara o `ApplicationReadyEvent`, o `GuardrailLoggerApplicationListener` é executado.
+4.  **Configuração da Engine**: A `SanitizationEngine` é inicializada como um Singleton, compilando os padrões Regex para os campos configurados e tipos de auto-detecção.
+5.  **Injeção nos Appenders**: O listener percorre todos os Appenders do Logback (ex: `ConsoleAppender`). Se o appender utilizar um `PatternLayoutEncoder`, ele é substituído ou envolvido pelo `GuardrailMaskingEncoder`, preservando o padrão de log (layout) original.
+
+### Fluxo de Sanitização (Runtime)
+
+A sanitização ocorre de forma transparente durante a execução da aplicação:
+
+1.  **Chamada de Log**: O código da aplicação chama `log.info("...")`, `log.error("...")`, etc.
+2.  **Interceptação**: O Logback encaminha o evento para os Appenders. O `GuardrailMaskingEncoder` intercepta a mensagem antes de escrevê-la na saída.
+3.  **Processamento na Engine**:
+    *   A mensagem original é enviada para a `SanitizationEngine`.
+    *   **Busca por Campos**: A engine procura por padrões conhecidos de chave-valor (JSON, toString, query params) baseados nos nomes de campos configurados.
+    *   **Auto-detecção**: Se habilitado, a engine aplica Regex globais para identificar padrões de CPF, e-mail, etc., mesmo fora de pares chave-valor.
+4.  **Formatação**: Para cada dado sensível encontrado, a engine consulta o `FormatterRegistry` para obter o formatador adequado (ex: `CpfFormatter`) e aplica a máscara.
+5.  **Saída Sanitizada**: A mensagem mascarada é devolvida ao encoder, que continua o processo normal de escrita do log.
+
 ## Requisitos
 
 | Componente | Versão |
