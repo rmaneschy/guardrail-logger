@@ -1,9 +1,9 @@
 package com.guardrail.logger.logback;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.LoggerContextVO;
-import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.classic.spi.LoggerContextVO;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.spi.AppenderAttachable;
@@ -11,6 +11,7 @@ import ch.qos.logback.core.spi.AppenderAttachableImpl;
 import com.guardrail.logger.engine.SanitizationEngine;
 import org.slf4j.Marker;
 import org.slf4j.event.KeyValuePair;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Iterator;
 import java.util.List;
@@ -186,8 +187,9 @@ public class GuardrailAppenderWrapper extends AppenderBase<ILoggingEvent>
         }
         
         @Override
-        public Marker getMarker() { 
-            return delegate.getMarker(); 
+        public Marker getMarker() {
+            final var markers = delegate.getMarkerList();
+            return CollectionUtils.firstElement(markers);
         }
         
         @Override
@@ -202,7 +204,7 @@ public class GuardrailAppenderWrapper extends AppenderBase<ILoggingEvent>
         
         @Override
         public Map<String, String> getMdc() { 
-            return delegate.getMdc(); 
+            return delegate.getMDCPropertyMap();
         }
         
         @Override

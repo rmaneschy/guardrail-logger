@@ -15,6 +15,10 @@ jar {
     }
 }
 
+java {
+    withSourcesJar()
+}
+
 publishing {
     repositories {
         // Maven Local para desenvolvimento

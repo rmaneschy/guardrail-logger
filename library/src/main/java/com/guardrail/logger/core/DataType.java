@@ -19,7 +19,7 @@ public enum DataType {
     /**
      * Cadastro Nacional de Pessoa Jurídica (CNPJ) - 14 dígitos.
      */
-    CNPJ("cnpj", "\\d{14}|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}"),
+    CNPJ("cnpj", "\\[0-9A-Za-z]{14}|\\[0-9A-Za-z]{2}\\.\\[0-9A-Za-z]{3}\\.\\[0-9A-Za-z]{3}/\\[0-9A-Za-z]{4}-\\[0-9A-Za-z]{2}"),
 
     /**
      * Registro Geral (RG) - documento de identidade.
@@ -69,7 +69,7 @@ public enum DataType {
     /**
      * Número de conta bancária.
      */
-    BANK_ACCOUNT("bankAccount", "\\d{5,12}"),
+    BANK_ACCOUNT("account", "\\d{5,12}"),
 
     /**
      * Agência bancária.

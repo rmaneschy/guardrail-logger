@@ -3,9 +3,6 @@ plugins {
     id 'jacoco'
 }
 
-sourceCompatibility = '21'
-targetCompatibility = '21'
-
 allprojects {
     apply plugin: 'jacoco'
     group = "com.guardrail"

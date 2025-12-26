@@ -105,6 +105,10 @@ public class SanitizationEngine {
         patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*=\\s*'([^']+)'"));
         patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*=\\s*([^,\\]\\}\\s]+)"));
 
+        // Texto livre: fieldName: value ou fieldName: "value"
+        patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*:\\s*\"([^\"]+)\""));
+        patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*:\\s*([^,\\s]+)"));
+
         fieldPatterns.put(fieldName.toLowerCase(), patterns);
     }
 
