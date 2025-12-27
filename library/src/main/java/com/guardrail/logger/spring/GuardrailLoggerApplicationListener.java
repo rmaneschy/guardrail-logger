@@ -7,14 +7,12 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.encoder.Encoder;
-import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
 import com.guardrail.logger.config.GuardrailLoggerProperties;
 import com.guardrail.logger.config.SensitiveField;
 import com.guardrail.logger.core.DataType;
 import com.guardrail.logger.engine.SanitizationEngine;
 import com.guardrail.logger.formatter.*;
 import com.guardrail.logger.logback.GuardrailMaskingEncoder;
-import com.guardrail.logger.logback.GuardrailMaskingLayout;
 import com.guardrail.logger.registry.FormatterRegistry;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +77,7 @@ public class GuardrailLoggerApplicationListener {
         registerDefaultFormatters();
 
         // Inicializa a engine de sanitização
-        SanitizationEngine.getInstance().initialize(properties);
+        SanitizationEngine.getInstance().configure(properties);
 
         // Configura os appenders do Logback
         configureLogbackAppenders(properties);

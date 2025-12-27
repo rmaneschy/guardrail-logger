@@ -1,5 +1,7 @@
 package com.guardrail.logger.core;
 
+import com.guardrail.logger.engine.SanitizationPatterns;
+
 /**
  * Enumeração dos tipos de dados sensíveis suportados pela biblioteca.
  * 
@@ -14,72 +16,72 @@ public enum DataType {
     /**
      * Cadastro de Pessoa Física (CPF) - 11 dígitos.
      */
-    CPF("cpf", "\\d{11}|\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}"),
+    CPF("cpf", SanitizationPatterns.CPF),
 
     /**
      * Cadastro Nacional de Pessoa Jurídica (CNPJ) - 14 dígitos.
      */
-    CNPJ("cnpj", "\\[0-9A-Za-z]{14}|\\[0-9A-Za-z]{2}\\.\\[0-9A-Za-z]{3}\\.\\[0-9A-Za-z]{3}/\\[0-9A-Za-z]{4}-\\[0-9A-Za-z]{2}"),
+    CNPJ("cnpj", SanitizationPatterns.CNPJ),
 
     /**
      * Registro Geral (RG) - documento de identidade.
      */
-    RG("rg", "\\d{7,9}"),
+    RG("rg", SanitizationPatterns.RG),
 
     /**
      * Endereço de e-mail.
      */
-    EMAIL("email", "[\\w.-]+@[\\w.-]+\\.\\w+"),
+    EMAIL("email", SanitizationPatterns.EMAIL),
 
     /**
      * Número de telefone.
      */
-    PHONE("phone", "\\(?\\d{2}\\)?\\s?\\d{4,5}-?\\d{4}"),
+    PHONE("phone", SanitizationPatterns.PHONE),
 
     /**
      * Número de cartão de crédito.
      */
-    CREDIT_CARD("creditCard", "\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}"),
+    CREDIT_CARD("creditCard", SanitizationPatterns.CREDIT_CARD),
 
     /**
      * Endereço IP (IPv4).
      */
-    IP_ADDRESS("ipAddress", "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"),
+    IP_ADDRESS("ipAddress", SanitizationPatterns.IP_ADDRESS),
 
     /**
      * Senha ou token de autenticação.
      */
-    PASSWORD("password", ".*"),
+    PASSWORD("password", SanitizationPatterns.GENERIC),
 
     /**
      * Nome completo de pessoa.
      */
-    NAME("name", "[A-Za-zÀ-ÿ\\s]+"),
+    NAME("name", SanitizationPatterns.NAME),
 
     /**
      * Endereço físico.
      */
-    ADDRESS("address", ".*"),
+    ADDRESS("address", SanitizationPatterns.GENERIC),
 
     /**
      * Valor monetário ou renda.
      */
-    MONETARY("monetary", "\\d+[,.]?\\d*"),
+    MONETARY("monetary", SanitizationPatterns.MONETARY),
 
     /**
      * Número de conta bancária.
      */
-    BANK_ACCOUNT("account", "\\d{5,12}"),
+    BANK_ACCOUNT("account", SanitizationPatterns.BANK_ACCOUNT),
 
     /**
      * Agência bancária.
      */
-    BANK_AGENCY("bankAgency", "\\d{4,6}"),
+    BANK_AGENCY("bankAgency", SanitizationPatterns.BANK_AGENCY),
 
     /**
      * Tipo genérico para dados não categorizados.
      */
-    GENERIC("generic", ".*");
+    GENERIC("generic", SanitizationPatterns.GENERIC);
 
     private final String key;
     private final String defaultPattern;

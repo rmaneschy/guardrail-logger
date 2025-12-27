@@ -1,1 +1,0 @@
-Apenas um arquivo vazio para manter a estrutura do diretório :) Apague no primeiro commit.

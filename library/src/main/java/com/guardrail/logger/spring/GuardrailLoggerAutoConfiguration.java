@@ -71,7 +71,7 @@ public class GuardrailLoggerAutoConfiguration {
                 
                 log.info("Guardrail Logger initialized on ApplicationReadyEvent");
             } catch (Exception e) {
-                log.error("Failed to initialize Guardrail Logger", e);
+                log.error("Failed to configure Guardrail Logger", e);
             }
         };
     }

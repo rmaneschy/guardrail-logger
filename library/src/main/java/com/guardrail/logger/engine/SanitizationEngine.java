@@ -4,7 +4,6 @@ import com.guardrail.logger.config.GuardrailLoggerProperties;
 import com.guardrail.logger.config.SensitiveField;
 import com.guardrail.logger.core.DataType;
 import com.guardrail.logger.core.Formatter;
-import com.guardrail.logger.core.Obfuscator;
 import com.guardrail.logger.obfuscator.DefaultObfuscator;
 import com.guardrail.logger.obfuscator.PartialObfuscator;
 import com.guardrail.logger.registry.FormatterRegistry;
@@ -53,63 +52,26 @@ public class SanitizationEngine {
     }
 
     /**
-     * Inicializa a engine com as propriedades de configuração.
+     * Configura a engine com as propriedades de configuração.
      *
      * @param properties propriedades de configuração
      */
-    public synchronized void initialize(GuardrailLoggerProperties properties) {
+    public synchronized void configure(GuardrailLoggerProperties properties) {
         this.properties = properties;
-        this.fieldPatterns.clear();
-        this.dataTypePatterns.clear();
-        this.sensitiveFieldNames.clear();
+        this.resetInternalState();
 
-        // Registra campos sensíveis configurados
-        for (SensitiveField field : properties.getSensitiveFields()) {
-            registerSensitiveField(field);
-        }
+        properties.getSensitiveFields().forEach(this::compilePatternsForField);
 
-        // Compila padrões para tipos de dados auto-detectados
         if (properties.isAutoDetect()) {
-            for (DataType dataType : properties.getAutoDetectTypes()) {
-                dataTypePatterns.put(dataType, Pattern.compile(dataType.getDefaultPattern()));
-            }
+            properties.getAutoDetectTypes().forEach(type -> 
+                dataTypePatterns.put(type, Pattern.compile(type.getDefaultPattern())));
         }
 
-        // Registra ofuscador padrão
         ObfuscatorRegistry.getInstance().setDefaultObfuscator(
             new DefaultObfuscator(properties.getMaskChar(), properties.getDefaultMask())
         );
 
         this.initialized = true;
-    }
-
-    /**
-     * Registra um campo sensível para detecção.
-     *
-     * @param field configuração do campo sensível
-     */
-    public void registerSensitiveField(SensitiveField field) {
-        String fieldName = field.getName();
-        sensitiveFieldNames.add(field.isCaseSensitive() ? fieldName : fieldName.toLowerCase());
-
-        String flags = field.isCaseSensitive() ? "" : "(?i)";
-        
-        List<Pattern> patterns = new ArrayList<>();
-        
-        // JSON: "fieldName": "value" ou "fieldName": value
-        patterns.add(Pattern.compile(flags + "\"" + Pattern.quote(fieldName) + "\"\\s*:\\s*\"([^\"]+)\""));
-        patterns.add(Pattern.compile(flags + "\"" + Pattern.quote(fieldName) + "\"\\s*:\\s*([^,}\\s]+)"));
-        
-        // toString: fieldName=value ou fieldName="value" ou fieldName='value'
-        patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*=\\s*\"([^\"]+)\""));
-        patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*=\\s*'([^']+)'"));
-        patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*=\\s*([^,\\]\\}\\s]+)"));
-
-        // Texto livre: fieldName: value ou fieldName: "value"
-        patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*:\\s*\"([^\"]+)\""));
-        patterns.add(Pattern.compile(flags + Pattern.quote(fieldName) + "\\s*:\\s*([^,\\s]+)"));
-
-        fieldPatterns.put(fieldName.toLowerCase(), patterns);
     }
 
     /**
@@ -119,172 +81,131 @@ public class SanitizationEngine {
      * @return mensagem sanitizada
      */
     public String sanitize(String message) {
-        if (!initialized || !properties.isEnabled() || message == null || message.isEmpty()) {
+        if (isNotOperational(message)) {
             return message;
         }
 
-        String result = message;
+        String result = maskFields(message);
 
-        // Aplica ofuscação por campo configurado
-        result = sanitizeByFields(result);
-
-        // Aplica detecção automática de tipos de dados
-        if (properties.isAutoDetect()) {
-            result = sanitizeByDataTypes(result);
-        }
-
-        return result;
+        return properties.isAutoDetect() ? maskDataTypes(result) : result;
     }
 
-    /**
-     * Sanitiza a mensagem baseado nos campos sensíveis configurados.
-     */
-    private String sanitizeByFields(String message) {
-        String result = message;
-
-        for (SensitiveField field : properties.getSensitiveFields()) {
-            List<Pattern> patterns = fieldPatterns.get(field.getName().toLowerCase());
-            if (patterns == null) continue;
-
-            for (Pattern pattern : patterns) {
-                result = applyPattern(result, pattern, field);
-            }
-        }
-
-        return result;
+    private boolean isNotOperational(String message) {
+        return !initialized || !properties.isEnabled() || message == null || message.isEmpty();
     }
 
-    /**
-     * Aplica um padrão de ofuscação à mensagem.
-     */
-    private String applyPattern(String message, Pattern pattern, SensitiveField field) {
+    private String maskFields(String message) {
+        return properties.getSensitiveFields().stream()
+                .reduce(message, (msg, field) -> {
+                    List<Pattern> patterns = fieldPatterns.get(field.getName().toLowerCase());
+                    return patterns == null ? msg : patterns.stream()
+                            .reduce(msg, (m, p) -> applyRegex(m, p, field), (m1, m2) -> m1);
+                }, (m1, m2) -> m1);
+    }
+
+    private String maskDataTypes(String message) {
+        return dataTypePatterns.entrySet().stream()
+                .reduce(message, (msg, entry) -> applyDataTypeRegex(msg, entry.getValue(), entry.getKey()), (m1, m2) -> m1);
+    }
+
+    private String applyRegex(String message, Pattern pattern, SensitiveField field) {
         Matcher matcher = pattern.matcher(message);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         while (matcher.find()) {
-            String matchedValue = null;
+            int groupIndex = matcher.groupCount();
+            String value = matcher.group(groupIndex);
             
-            // Tenta encontrar o grupo capturado
-            for (int i = 1; i <= matcher.groupCount(); i++) {
-                String group = matcher.group(i);
-                if (group != null && !group.isEmpty()) {
-                    matchedValue = group;
-                    break;
-                }
-            }
-            
-            if (matchedValue == null || matchedValue.isEmpty()) {
-                continue;
-            }
+            String replacement = Optional.ofNullable(value)
+                    .filter(v -> !v.isEmpty())
+                    .map(v -> {
+                        String obfuscated = resolveValue(v, field);
+                        String full = matcher.group();
+                        int start = matcher.start(groupIndex) - matcher.start();
+                        int end = matcher.end(groupIndex) - matcher.start();
+                        return full.substring(0, start) + obfuscated + full.substring(end);
+                    })
+                    .orElseGet(matcher::group);
 
-            String obfuscatedValue = obfuscateValue(matchedValue, field);
-            String fullMatch = matcher.group();
-            String replacement = fullMatch.replace(matchedValue, obfuscatedValue);
-            
-            // Escapa caracteres especiais no replacement
             matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
         }
-        matcher.appendTail(sb);
-
-        return sb.toString();
+        return matcher.appendTail(sb).toString();
     }
 
-    /**
-     * Sanitiza a mensagem baseado na detecção automática de tipos de dados.
-     */
-    private String sanitizeByDataTypes(String message) {
-        String result = message;
+    private String applyDataTypeRegex(String message, Pattern pattern, DataType dataType) {
+        Matcher matcher = pattern.matcher(message);
+        StringBuilder sb = new StringBuilder();
 
-        for (Map.Entry<DataType, Pattern> entry : dataTypePatterns.entrySet()) {
-            DataType dataType = entry.getKey();
-            Pattern pattern = entry.getValue();
-
-            Matcher matcher = pattern.matcher(result);
-            StringBuffer sb = new StringBuffer();
-
-            while (matcher.find()) {
-                String matchedValue = matcher.group();
-                
-                // Verifica se o valor já foi ofuscado
-                if (isAlreadyObfuscated(matchedValue)) {
-                    continue;
-                }
-
-                String obfuscatedValue = obfuscateByDataType(matchedValue, dataType);
-                matcher.appendReplacement(sb, Matcher.quoteReplacement(obfuscatedValue));
-            }
-            matcher.appendTail(sb);
-            result = sb.toString();
+        while (matcher.find()) {
+            String value = matcher.group();
+            String replacement = isAlreadyMasked(value) ? value : resolveByDataType(value, dataType);
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
         }
-
-        return result;
+        return matcher.appendTail(sb).toString();
     }
 
-    /**
-     * Ofusca um valor baseado na configuração do campo.
-     */
-    private String obfuscateValue(String value, SensitiveField field) {
-        // Tenta usar formatador específico
+    private String resolveValue(String value, SensitiveField field) {
+        return getFormatter(field)
+                .map(f -> f.format(value))
+                .orElseGet(() -> applyPartialOrFallback(value, field));
+    }
+
+    private Optional<Formatter> getFormatter(SensitiveField field) {
         if (field.getFormatterName() != null) {
-            Optional<Formatter> formatter = FormatterRegistry.getInstance()
-                .getByName(field.getFormatterName());
-            if (formatter.isPresent()) {
-                return formatter.get().format(value);
-            }
+            return FormatterRegistry.getInstance().getByName(field.getFormatterName());
         }
-
-        // Tenta usar formatador por tipo de dado
         if (field.getDataType() != DataType.GENERIC) {
-            Optional<Formatter> formatter = FormatterRegistry.getInstance()
-                .getByDataType(field.getDataType());
-            if (formatter.isPresent()) {
-                return formatter.get().format(value);
-            }
+            return FormatterRegistry.getInstance().getByDataType(field.getDataType());
         }
+        return Optional.empty();
+    }
 
-        // Usa ofuscação parcial se configurada
+    private String applyPartialOrFallback(String value, SensitiveField field) {
         if (field.getVisibleCharsStart() > 0 || field.getVisibleCharsEnd() > 0) {
-            PartialObfuscator obfuscator = new PartialObfuscator(
+            return new PartialObfuscator(
                 field.getVisibleCharsStart(),
                 field.getVisibleCharsEnd(),
                 properties.getMaskChar(),
                 3
-            );
-            return obfuscator.obfuscate(value);
+            ).obfuscate(value);
         }
-
-        // Usa ofuscador padrão
         return ObfuscatorRegistry.getInstance().getDefaultObfuscator().obfuscate(value);
     }
 
-    /**
-     * Ofusca um valor baseado no tipo de dado detectado.
-     */
-    private String obfuscateByDataType(String value, DataType dataType) {
-        // Tenta usar formatador por tipo de dado
-        Optional<Formatter> formatter = FormatterRegistry.getInstance().getByDataType(dataType);
-        if (formatter.isPresent()) {
-            return formatter.get().format(value);
-        }
-
-        // Tenta usar ofuscador por tipo de dado
-        Obfuscator obfuscator = ObfuscatorRegistry.getInstance().getObfuscatorFor(dataType);
-        if (obfuscator != null) {
-            return obfuscator.obfuscate(value);
-        }
-
-        // Usa ofuscador padrão
-        return ObfuscatorRegistry.getInstance().getDefaultObfuscator().obfuscate(value);
+    private String resolveByDataType(String value, DataType dataType) {
+        return FormatterRegistry.getInstance().getByDataType(dataType)
+                .map(f -> f.format(value))
+                .orElseGet(() -> Optional.ofNullable(ObfuscatorRegistry.getInstance().getObfuscatorFor(dataType))
+                        .map(o -> o.obfuscate(value))
+                        .orElse(ObfuscatorRegistry.getInstance().getDefaultObfuscator().obfuscate(value)));
     }
 
-    /**
-     * Verifica se o valor já foi ofuscado.
-     */
-    private boolean isAlreadyObfuscated(String value) {
-        if (value == null || value.isEmpty()) return true;
-        char maskChar = properties.getMaskChar();
-        long maskCount = value.chars().filter(c -> c == maskChar).count();
-        return maskCount > value.length() / 2;
+    private void compilePatternsForField(SensitiveField field) {
+        String fieldName = field.getName();
+        String normalizedName = fieldName.toLowerCase();
+        sensitiveFieldNames.add(field.isCaseSensitive() ? fieldName : normalizedName);
+
+        String flags = field.isCaseSensitive() ? "" : SanitizationPatterns.CASE_INSENSITIVE;
+        String quotedName = Pattern.quote(fieldName);
+        
+        fieldPatterns.put(normalizedName, List.of(
+            Pattern.compile(flags + String.format(SanitizationPatterns.JSON_QUOTED, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.JSON_UNQUOTED, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.TO_STRING_DOUBLE_QUOTED, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.TO_STRING_SINGLE_QUOTED, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.TO_STRING_UNQUOTED, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.TEXT_COLON_QUOTED, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.TEXT_COLON_UNQUOTED, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.QUERY_PARAMETER, quotedName)),
+            Pattern.compile(flags + String.format(SanitizationPatterns.PATH_PARAMETER, quotedName))
+        ));
+    }
+
+    private boolean isAlreadyMasked(String value) {
+        return Optional.ofNullable(value)
+                .filter(v -> !v.isEmpty())
+                .map(v -> v.chars().filter(c -> c == properties.getMaskChar()).count() > v.length() / 2)
+                .orElse(true);
     }
 
     /**
@@ -310,9 +231,13 @@ public class SanitizationEngine {
      */
     public synchronized void reset() {
         this.initialized = false;
+        this.resetInternalState();
+        this.properties = null;
+    }
+
+    private void resetInternalState() {
         this.fieldPatterns.clear();
         this.dataTypePatterns.clear();
         this.sensitiveFieldNames.clear();
-        this.properties = null;
     }
 }

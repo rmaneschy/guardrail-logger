@@ -41,13 +41,13 @@ class SanitizationEngineTest {
             GuardrailLoggerProperties properties = new GuardrailLoggerProperties();
             properties.setEnabled(true);
             
-            engine.initialize(properties);
+            engine.configure(properties);
             
             assertThat(engine.isInitialized()).isTrue();
         }
 
         @Test
-        @DisplayName("Não deve estar inicializado antes de chamar initialize")
+        @DisplayName("Não deve estar inicializado antes de chamar configure")
         void shouldNotBeInitializedBeforeInitialize() {
             assertThat(engine.isInitialized()).isFalse();
         }
@@ -70,7 +70,7 @@ class SanitizationEngineTest {
                 .dataType(DataType.NAME)
                 .build());
             
-            engine.initialize(properties);
+            engine.configure(properties);
         }
 
         @Test
@@ -92,7 +92,7 @@ class SanitizationEngineTest {
                 .name("renda")
                 .dataType(DataType.MONETARY)
                 .build());
-            engine.initialize(properties);
+            engine.configure(properties);
             
             String result = engine.sanitize(input);
             assertThat(result).doesNotContain("12345678909");
@@ -116,7 +116,7 @@ class SanitizationEngineTest {
                 .dataType(DataType.NAME)
                 .build());
             
-            engine.initialize(properties);
+            engine.configure(properties);
         }
 
         @Test
@@ -160,7 +160,7 @@ class SanitizationEngineTest {
                 .dataType(DataType.CPF)
                 .build());
             
-            engine.initialize(properties);
+            engine.configure(properties);
         }
 
         @Test
@@ -172,7 +172,7 @@ class SanitizationEngineTest {
                 .name("JOSE DA SILVA")
                 .dataType(DataType.NAME)
                 .build());
-            engine.initialize(properties);
+            engine.configure(properties);
             
             String result = engine.sanitize(input);
             // A sanitização depende da configuração de campos
@@ -194,7 +194,7 @@ class SanitizationEngineTest {
                 .dataType(DataType.CPF)
                 .build());
             
-            engine.initialize(properties);
+            engine.configure(properties);
             
             String input = "{\"documento\": \"12345678909\"}";
             String result = engine.sanitize(input);
@@ -220,7 +220,7 @@ class SanitizationEngineTest {
         void setUpEngine() {
             GuardrailLoggerProperties properties = new GuardrailLoggerProperties();
             properties.setEnabled(true);
-            engine.initialize(properties);
+            engine.configure(properties);
         }
 
         @Test
